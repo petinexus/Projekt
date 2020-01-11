@@ -21,5 +21,5 @@ nagyon magas és beépítését legtöbbször szakembert is igényel, ezért
 szeretnénk egy olcsó telefonról vezérelhető termosztátot elkészíteni.
 A fő célunk ezzel a ház fűtés vezérlésének időzítése és költségének
 csökkentése, további kényelmi funkciók beépítésével (például: kijelző, értesítések küldése e-mailen keresztül).
-## Hardveres megvalósítás
-Az eszköz elkészítéséhez egy ESP8266-os mikrovezérlőt használtunk. Az ESP8266-ról [LINK HELYE] wiki oldalon olvashatóak további információk.
+## Hardveres, illetve szoftveres megvalósítás
+Az eszköz elkészítéséhez egy ESP8266-os mikrovezérlőt használtunk. Az ESP8266-ról [LINK HELYE] wiki oldalon olvashatóak további információk. A mikrovezérlő programozását az Arduino IDE fejlesztői környezetben, C++ nyelven írtuk meg.
