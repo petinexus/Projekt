@@ -5,11 +5,13 @@
 #include <Wire.h>  
 #include "SSD1306Wire.h" 
 
+WiFiClient espClient;
 SSD1306Wire display(0x3c, 12, 14); 
 DHT dht(2, DHT22);
 
 const char* ssid     = "Redmi";
 const char* password = "12345678";
+const char* smtpServer = "mail.smtp2go.com";
 
 ESP8266WebServer server(80);
 String webString = "";  
@@ -138,13 +140,93 @@ void handle_submit() {
     }
   }
 
-
   if (webMessage == "") 
     webMessage = "Be&aacutell&iacutet&aacutesok friss&uumlltek!";
   
   setHTML();
   server.send(200, "text/html", webString);            
   delay(100);
+}
+
+
+byte sendEmail(){
+  espClient.connect(smtpServer,2525);
+  if(!emailTeszt())
+    return 0;
+   
+  espClient.println("HELO Termosztat");
+  if(!emailTeszt())
+    return 0;
+    
+  espClient.println("AUTH LOGIN");
+  if(!emailTeszt())
+    return 0;
+    
+  espClient.println("TWlrcm9Qcm9qZWt0"); //base64-ben encode-olt username az SMTP szerverhez
+  if(!emailTeszt())
+    return 0;
+    
+  espClient.println("dGVybW9zenRhdA0K"); //ez meg a jelszó
+  if(!emailTeszt())
+    return 0;
+    
+  espClient.println(F("MAIL From: petinexus@gmail.com")); //emailt kuld
+  if(!emailTeszt())
+    return 0;
+    
+  espClient.println(F("RCPT To: roland.borbely12@gmail.com")); //ide
+  if(!emailTeszt())
+    return 0;
+ 
+  espClient.println("DATA");
+  if(!emailTeszt())
+    return 0;
+    
+  espClient.println("To: roland.borbely12@gmail.com");
+  espClient.println("From: petinexus@gmail.com");
+  espClient.println("Subject: Teszt email\r\n");  
+  espClient.println("ESP8266-rol kuldott teszt e-mail\n");
+  espClient.println("kovetkezo sor, teszt erdekeben");
+
+  espClient.println("."); //az email veget jelzi es elkuldi
+  if(!emailTeszt())
+    return 0;
+    
+  espClient.println("QUIT"); //lecsatlakozas
+  if(!emailTeszt())
+    return 0;
+    
+  espClient.stop;
+  return 1;
+}
+
+byte emailTeszt(){
+  byte responseCode;
+  byte readByte;
+  int loopCount = 0; 
+
+  while (!espClient.available()) //ha nem elerheto 1 ms-sel no az ertek, 20000 (2 mp) utan eldobja
+  {
+    delay(1);
+    loopCount++;
+    if (loopCount > 20000)
+    {
+      espClient.stop();
+      return 0;
+    }
+  }
+
+  responseCode = espClient.peek();
+  
+  while (espClient.available())
+    readByte = espClient.read();
+ 
+  if (responseCode >= '4')
+      return 0;
+
+
+  return 1;
+
 }
 
 
@@ -184,6 +266,8 @@ void setup() {
 
   
   server.begin();
+  
+  byte email=sendEmail();
   
 }
 
