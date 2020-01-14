@@ -4,7 +4,7 @@
 #include <DHT.h>
 #include <Wire.h>  
 #include "SSD1306Wire.h" 
-
+#include "Gsender.h"
 
 SSD1306Wire display(0x3c, 12, 14); 
 DHT dht(2, DHT22);
