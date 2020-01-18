@@ -3,6 +3,8 @@
 #include <ESP8266WebServer.h>
 #include <DHT.h>
 #include <Wire.h>  
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 #include "SSD1306Wire.h" 
 #include "Gsender.h"
 
@@ -26,6 +28,15 @@ int beho = 20;
 int ba = 0;
 int bb = 0;
 int ti = 0;
+
+String email = "roland.borbely12@gmail.com"; 
+int aktime = 10;
+
+const long utcOffsetInSeconds = 3600;
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
+int akt = -1;
+
 
 void setHTML()
 {
@@ -85,12 +96,21 @@ void setHTML()
   else
     webString += "<div>F&ucirct&eacutes bekapcsolva</div>";
 
+  webString += "<div>Email k&ucircld&eacutes minden " + String(aktime) + " percbe</div> \n";
   webString += "<div><a href=\"http://" + WiFi.localIP().toString() + "\">Frissit</a></div>\n";
   webString += "</td><td>";
   webString += "<div id=\"chart_divTemp\" style=\"width: 250px;\"></div>\n";
   webString += "</td><td>";
   webString += "<div id=\"chart_divHumid\" style=\"width: 250px;\"></div>\n";
   webString += "</td></tr></table>\n";
+  webString += "Email k&ucircld&eacutes rendszeress&eacutege : <select name='select'>";
+  webString += "  <option value=\"0\">most</option>";
+  webString += "  <option value=\"10\">Minden 10 percben</option>";
+  webString += "  <option value=\"30\">Minden 30 percben</option>";
+  webString += "  <option value=\"60\">Minden 60 percben</option>";
+  webString += "</select> <br>";
+  webString += "Email cim :  <input type='text' name='emailcim' size='33' value=" + email + "><br>";
+  webString += "<input type='submit' style='margin-left:120px' value='Nyomd meg ezt is!'  >";
   webString += "</body></html>\n";
 }
 
@@ -135,7 +155,41 @@ void handle_submit() {
         else
           webMessage += "Sz&aacutemnak kell lennie!<br>";
       }
- 
+
+if(server.argName(i) == "select"){
+  if(server.arg(i) == "0"){
+    for ( uint8_t j = 0; j < server.args(); j++ ){
+      if(server.argName(j) == "emailcim"){
+        email = String(server.arg(j));
+        Gsender *gsender = Gsender::Instance();  
+        String subject = "ESP8266 értesítés - azonnali e-mail";
+        gsender->Subject(subject)->Send(email, "Az aktuális hőmérséklet: "+t+" °C, a páratartalom: "+h+" %.");
+        webMessage += "Email elk&ucircldve!<br>";
+      }  
+    }
+  }
+  if(server.arg(i) == "10"){
+    for ( uint8_t j = 0; j < server.args(); j++ ){
+      if(server.argName(j) == "emailcim")
+        email = String(server.arg(j));
+      aktime = 10;  
+    }
+  }
+  if(server.arg(i) == "30"){
+    for ( uint8_t j = 0; j < server.args(); j++ ){
+      if(server.argName(j) == "emailcim")
+        email = String(server.arg(j));
+      aktime = 30;  
+    }
+  }
+  if(server.arg(i) == "60"){
+    for ( uint8_t j = 0; j < server.args(); j++ ){
+      if(server.argName(j) == "emailcim")
+        email = String(server.arg(j));
+      aktime = 60;  
+    }
+  }
+}
     }
   }
 
@@ -157,7 +211,6 @@ void setup() {
   pinMode(13, INPUT);
   pinMode(15, INPUT);
 
-
   display.init();
   display.flipScreenVertically();
   display.setFont(ArialMT_Plain_10);
@@ -166,34 +219,33 @@ void setup() {
   delay(10);
 
   WiFi.disconnect();
-  IPAddress ip(192,168,43,119);   
-  IPAddress gateway(192,168,43,1);   
-  IPAddress subnet(255,255,255,0);  
-  WiFi.config(ip, subnet, gateway);
+  IPAddress ip(192, 168, 43, 120);   
+  IPAddress gateway(192, 168, 43, 1);   
+  IPAddress subnet(255, 255, 255, 0);  
+  IPAddress dns(8, 8, 8, 8); 
   WiFi.begin(ssid, password);
+  WiFi.config(ip, gateway, subnet, dns); 
  
   WiFi.mode(WIFI_STA);
    
   while (WiFi.status() != WL_CONNECTED) 
     delay(500);
   
-
   server.on("/", handle_root);
   server.on("/submit", handle_submit);
-
-  
   server.begin();
   
   Gsender *gsender = Gsender::Instance();  
-    String subject = "teszt email";
-    gsender->Subject(subject)->Send("roland.borbely12@gmail.com", "teszt email");
-        
-  
+  String subject = "Indulas";
+  gsender->Subject(subject)->Send("roland.borbely12@gmail.com", "elindult");
+
+  timeClient.begin();
 }
 
 
 void loop() {
-    delay(1000);
+    timeClient.update();
+    delay(250);
 
     bb = digitalRead(13);
     if (bb == HIGH) 
@@ -234,6 +286,36 @@ void loop() {
         digitalWrite(4, HIGH);
     }
     display.display();
+
+if(aktime == 60){
+if(timeClient.getMinutes()%60 == 0 && timeClient.getMinutes() != akt)
+  {
+    akt = timeClient.getMinutes();
+    Gsender *gsender = Gsender::Instance();  
+    String subject = "ESP8266 értesítés - 1 perc";
+    gsender->Subject(subject)->Send(email, "Az aktuális hőmérséklet: "+t+" °C, a páratartalom: "+h+" %.");
+  }
+}
+
+if(aktime == 30){
+if(timeClient.getMinutes()%30 == 0 && timeClient.getMinutes() != akt)
+  {
+    akt = timeClient.getMinutes();
+    Gsender *gsender = Gsender::Instance();  
+    String subject = "ESP8266 értesítés - 30 perc";
+    gsender->Subject(subject)->Send(email, "Az aktuális hőmérséklet: "+t+" °C, a páratartalom: "+h+" %.");
+  }
+}
+
+if(aktime == 10){
+if(timeClient.getMinutes()%10 == 0 && timeClient.getMinutes() != akt)
+  {
+    akt = timeClient.getMinutes();
+    Gsender *gsender = Gsender::Instance();  
+    String subject = "ESP8266 értesítés - 10 perc";
+    gsender->Subject(subject)->Send(email, "Az aktuális hőmérséklet: "+t+" °C, a páratartalom: "+h+" %.");
+  }
+}
     delay(10);
     server.handleClient();
 }
