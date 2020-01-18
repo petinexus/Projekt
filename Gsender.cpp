@@ -25,15 +25,10 @@ bool Gsender::AwaitSMTPResponse(WiFiClientSecure &client, const String &resp, ui
   uint32_t ts = millis();
   while (!client.available())
   {
-    if(millis() > (ts + timeOut)) {
-      _error = "SMTP Response TIMEOUT!";
+    if(millis() > (ts + timeOut)) 
       return false;
-    }
   }
   _serverResponce = client.readStringUntil('\n');
-#if defined(GS_SERIAL_LOG_1) || defined(GS_SERIAL_LOG_2) 
-  Serial.println(_serverResponce);
-#endif
   if (resp && _serverResponce.indexOf(resp) == -1) return false;
   return true;
 }
@@ -43,79 +38,44 @@ String Gsender::getLastResponce()
   return _serverResponce;
 }
 
-const char* Gsender::getError()
-{
-  return _error;
-}
-
 bool Gsender::Send(const String &to, const String &message)
 {
   WiFiClientSecure client;
-#if defined(GS_SERIAL_LOG_2)
-  Serial.print("Connecting to :");
-  Serial.println(SMTP_SERVER);  
-#endif
-  if(!client.connect(SMTP_SERVER, SMTP_PORT)) {
-    _error = "Could not connect to mail server";
+  if(!client.connect(SMTP_SERVER, SMTP_PORT)) 
     return false;
-  }
-  if(!AwaitSMTPResponse(client, "220")) {
-    _error = "Connection Error";
+  
+  if(!AwaitSMTPResponse(client, "220")) 
     return false;
-  }
+  
 
-#if defined(GS_SERIAL_LOG_2)
-  Serial.println("HELO friend:");
-#endif
   client.println("HELO friend");
-  if(!AwaitSMTPResponse(client, "250")){
-    _error = "identification error";
+  if(!AwaitSMTPResponse(client, "250"))
     return false;
-  }
+  
 
-#if defined(GS_SERIAL_LOG_2)
-  Serial.println("AUTH LOGIN:");
-#endif
   client.println("AUTH LOGIN");
   AwaitSMTPResponse(client);
 
-#if defined(GS_SERIAL_LOG_2)
-  Serial.println("EMAILBASE64_LOGIN:");
-#endif
   client.println(EMAILBASE64_LOGIN);
   AwaitSMTPResponse(client);
 
-#if defined(GS_SERIAL_LOG_2)
-  Serial.println("EMAILBASE64_PASSWORD:");
-#endif
   client.println(EMAILBASE64_PASSWORD);
-  if (!AwaitSMTPResponse(client, "235")) {
-    _error = "SMTP AUTH error";
+  if (!AwaitSMTPResponse(client, "235")) 
     return false;
-  }
+  
   
   String mailFrom = "MAIL FROM: <" + String(FROM) + '>';
-#if defined(GS_SERIAL_LOG_2)
-  Serial.println(mailFrom);
-#endif
   client.println(mailFrom);
   AwaitSMTPResponse(client);
 
   String rcpt = "RCPT TO: <" + to + '>';
-#if defined(GS_SERIAL_LOG_2)
-  Serial.println(rcpt);
-#endif
   client.println(rcpt);
   AwaitSMTPResponse(client);
 
-#if defined(GS_SERIAL_LOG_2)
-  Serial.println("DATA:");
-#endif
   client.println("DATA");
-  if(!AwaitSMTPResponse(client, "354")) {
-    _error = "SMTP DATA error";
+  if(!AwaitSMTPResponse(client, "354")) 
     return false;
-  }
+  
   
   client.println("From: <" + String(FROM) + '>');
   client.println("To: <" + to + '>');
@@ -130,14 +90,12 @@ bool Gsender::Send(const String &to, const String &message)
   String body = "<!DOCTYPE html><html lang=\"en\">" + message + "</html>";
   client.println(body);
   client.println(".");
-  if (!AwaitSMTPResponse(client, "250")) {
-    _error = "Sending message error";
+  if (!AwaitSMTPResponse(client, "250")) 
     return false;
-  }
+  
   client.println("QUIT");
-  if (!AwaitSMTPResponse(client, "221")) {
-    _error = "SMTP QUIT error";
+  if (!AwaitSMTPResponse(client, "221")) 
     return false;
-  }
+  
   return true;
 }
