@@ -12,8 +12,8 @@
 SSD1306Wire display(0x3c, 12, 14); 
 DHT dht(2, DHT22);
 
-const char* ssid     = "Redmi";
-const char* password = "12345678";
+const char* ssid     = ""; //SSID
+const char* password = ""; //wif jelszó
 
 ESP8266WebServer server(80);
 String webString = "";  
@@ -22,7 +22,7 @@ String s = "";
 String t = "";
 String h = "";
 String al = "ON";
-String foabiztonsag="3r05v3d3l3m";
+String foabiztonsag="";
 
 int C = 1;
 String cs = "1";
@@ -31,7 +31,7 @@ int ba = 0;
 int bb = 0;
 int ti = 0;
 
-String email = "roland.borbely12@gmail.com"; 
+String email = ""; //email az értesitéshez
 int aktime = 10;
 
 const long utcOffsetInSeconds = 3600;
@@ -94,7 +94,7 @@ void setHTML()
 
   webString += "<div>Email k&ucircld&eacutes minden " + String(aktime) + " percbe</div> \n";
   webString += "<div><a href=\"http://" + WiFi.localIP().toString() + "\">Frissit</a></div>\n";
-    webString += "<div><a href=\"http://192.168.43.34/kiir.php\">SQL</a></div>\n";
+    webString += "<div><a href=\"http:///kiir.php\">SQL</a></div>\n"; //sql szerver ip helye
   webString += "</td><td>";
   webString += "<div id=\"chart_divTemp\" style=\"width: 250px;\"></div>\n";
   webString += "</td><td>";
@@ -230,10 +230,6 @@ void setup() {
   server.on("/submit", handle_submit);
   server.begin();
   
-  Gsender *gsender = Gsender::Instance();  
-  String subject = "Indulas";
-  gsender->Subject(subject)->Send("roland.borbely12@gmail.com", "elindult");
-
   timeClient.begin();
 }
 
@@ -287,7 +283,7 @@ if(timeClient.getMinutes()%60 == 0 && timeClient.getMinutes() != akt)
   {
     akt = timeClient.getMinutes();
     Gsender *gsender = Gsender::Instance();  
-    String subject = "ESP8266 értesítés - 1 perc";
+    String subject = "ESP8266 értesítés - 1 órás";
     gsender->Subject(subject)->Send(email, "Az aktuális hőmérséklet: "+t+" °C, a páratartalom: "+h+" %.");
   }
 }
@@ -297,7 +293,7 @@ if(timeClient.getMinutes()%30 == 0 && timeClient.getMinutes() != akt)
   {
     akt = timeClient.getMinutes();
     Gsender *gsender = Gsender::Instance();  
-    String subject = "ESP8266 értesítés - 30 perc";
+    String subject = "ESP8266 értesítés - 30 perces";
     gsender->Subject(subject)->Send(email, "Az aktuális hőmérséklet: "+t+" °C, a páratartalom: "+h+" %.");
   }
 }
@@ -307,7 +303,7 @@ if(timeClient.getMinutes()%10 == 0 && timeClient.getMinutes() != akt)
   {
     akt = timeClient.getMinutes();
     Gsender *gsender = Gsender::Instance();  
-    String subject = "ESP8266 értesítés - 10 perc";
+    String subject = "ESP8266 értesítés - 10 perces";
     gsender->Subject(subject)->Send(email, "Az aktuális hőmérséklet: "+t+" °C, a páratartalom: "+h+" %.");
   }
 }
@@ -315,7 +311,7 @@ if(timeClient.getMinutes() % 1 == 0 && timeClient.getMinutes() != aktsql)
 {
   aktsql=timeClient.getMinutes();
   HTTPClient http;
-  http.begin("http://192.168.43.34/post.php");
+  http.begin("http:///post.php"); //sql szerver ip helye
   http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   String data = "foabiztonsag=" + foabiztonsag + "&temperature=" + t + " °C" + "&humidity=" + h + "%";
   http.POST(data);
