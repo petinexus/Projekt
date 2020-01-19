@@ -45,14 +45,10 @@ void setHTML()
 {
   webString = "<html><head>\n";
   webString += "<meta http-equiv=\"refresh\" content=\"60;url=http://" + WiFi.localIP().toString() + "\"> \n";
- 
-  ///////////// google charts script
   webString += "<script type=\"text/javascript\" src=\"https://www.gstatic.com/charts/loader.js\"></script> \n";
   webString += "   <script type=\"text/javascript\"> \n";
   webString += "    google.charts.load('current', {'packages':['gauge']}); \n";
   webString += "    google.charts.setOnLoadCallback(drawTempChart); \n";
-  
-  // draw temp guage
   webString += "   function drawTempChart() { \n";
   webString += "      var data = google.visualization.arrayToDataTable([ \n";
   webString += "        ['Label', 'Value'], ";
@@ -60,8 +56,6 @@ void setHTML()
   webString += t;
   webString += " ], ";
   webString += "       ]); \n";
-  
-  // setup the google chart options
   webString += "    var options = {";
   webString += "      width: 250, height: 150,";
   webString += "      min: -10, max: 50,";
@@ -73,7 +67,6 @@ void setHTML()
   webString += "   var chart = new google.visualization.Gauge(document.getElementById('chart_divTemp')); \n";
   webString += "  chart.draw(data, options); \n";
   webString += "  } \n";
-  
   webString += "    </script> \n";
   webString += "</head><body>\n";
   webString += "<form action=\"http://" + WiFi.localIP().toString() + "/submit\" method=\"POST\">";
@@ -119,20 +112,15 @@ void setHTML()
   webString += "</body></html>\n";
 }
 
-
-
 void handle_root() {
   webMessage = "";
   setHTML();
   server.send(200, "text/html", webString);            
-
   delay(100);
 }
 
 void handle_submit() {
-
   webMessage = "";
-
   if (server.args() > 0 ) {
     for ( uint8_t i = 0; i < server.args(); i++ ) {
 
@@ -323,8 +311,6 @@ if(timeClient.getMinutes()%10 == 0 && timeClient.getMinutes() != akt)
     gsender->Subject(subject)->Send(email, "Az aktuális hőmérséklet: "+t+" °C, a páratartalom: "+h+" %.");
   }
 }
-
-
 if(timeClient.getMinutes() % 1 == 0 && timeClient.getMinutes() != aktsql)
 {
   aktsql=timeClient.getMinutes();
@@ -335,7 +321,6 @@ if(timeClient.getMinutes() % 1 == 0 && timeClient.getMinutes() != aktsql)
   http.POST(data);
   http.end();
 }
-
     delay(10);
     server.handleClient();
 }
