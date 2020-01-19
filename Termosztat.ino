@@ -7,6 +7,7 @@
 #include <WiFiUdp.h>
 #include "SSD1306Wire.h" 
 #include "Gsender.h"
+#include <ESP8266HTTPClient.h>
 
 SSD1306Wire display(0x3c, 12, 14); 
 DHT dht(2, DHT22);
@@ -21,6 +22,7 @@ String s = "";
 String t = "";
 String h = "";
 String al = "ON";
+String foabiztonsag="3r05v3d3l3m";
 
 int C = 1;
 String cs = "1";
@@ -36,6 +38,7 @@ const long utcOffsetInSeconds = 3600;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 int akt = -1;
+int aktsql = -1;
 
 
 void setHTML()
@@ -98,12 +101,14 @@ void setHTML()
 
   webString += "<div>Email k&ucircld&eacutes minden " + String(aktime) + " percbe</div> \n";
   webString += "<div><a href=\"http://" + WiFi.localIP().toString() + "\">Frissit</a></div>\n";
+    webString += "<div><a href=\"http://192.168.43.34/kiir.php\">SQL</a></div>\n";
   webString += "</td><td>";
   webString += "<div id=\"chart_divTemp\" style=\"width: 250px;\"></div>\n";
   webString += "</td><td>";
   webString += "<div id=\"chart_divHumid\" style=\"width: 250px;\"></div>\n";
   webString += "</td></tr></table>\n";
   webString += "Email k&ucircld&eacutes rendszeress&eacutege : <select name='select'>";
+  webString += "  <option value=\"semmi\"></option>";
   webString += "  <option value=\"0\">most</option>";
   webString += "  <option value=\"10\">Minden 10 percben</option>";
   webString += "  <option value=\"30\">Minden 30 percben</option>";
@@ -113,6 +118,8 @@ void setHTML()
   webString += "<input type='submit' style='margin-left:120px' value='Nyomd meg ezt is!'  >";
   webString += "</body></html>\n";
 }
+
+
 
 void handle_root() {
   webMessage = "";
@@ -316,6 +323,19 @@ if(timeClient.getMinutes()%10 == 0 && timeClient.getMinutes() != akt)
     gsender->Subject(subject)->Send(email, "Az aktuális hőmérséklet: "+t+" °C, a páratartalom: "+h+" %.");
   }
 }
+
+
+if(timeClient.getMinutes() % 1 == 0 && timeClient.getMinutes() != aktsql)
+{
+  aktsql=timeClient.getMinutes();
+  HTTPClient http;
+  http.begin("http://192.168.43.34/post.php");
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  String data = "foabiztonsag=" + foabiztonsag + "&temperature=" + t + " °C" + "&humidity=" + h + "%";
+  http.POST(data);
+  http.end();
+}
+
     delay(10);
     server.handleClient();
 }
